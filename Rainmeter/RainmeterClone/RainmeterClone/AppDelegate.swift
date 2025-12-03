@@ -51,32 +51,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func createWidgetsForMonitors() {
-        // Remove existing windows
-        widgetWindows.forEach { $0.close() }
-        widgetWindows.removeAll()
+        // Close and remove existing windows safely
+        // Close all windows first
+        for window in widgetWindows {
+            window.orderOut(nil)
+        }
         
-        let settings = WidgetSettings.shared
-        
-        switch settings.selectedMonitor {
-        case .primary:
-            // Create widget on primary monitor only
-            let window = DesktopWidgetWindow()
-            window.orderFrontRegardless()
-            widgetWindows.append(window)
+        // Small delay to ensure windows are closed before removing references
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
             
-        case .all:
-            // Create widget on all monitors
-            for screen in NSScreen.screens {
-                let window = DesktopWidgetWindow(screen: screen)
+            // Now remove all references
+            self.widgetWindows.removeAll()
+            
+            let settings = WidgetSettings.shared
+            
+            switch settings.selectedMonitor {
+            case .primary:
+                // Create widget on primary monitor only
+                let window = DesktopWidgetWindow()
                 window.orderFrontRegardless()
-                widgetWindows.append(window)
+                self.widgetWindows.append(window)
+                
+            case .all:
+                // Create widget on all monitors
+                for screen in NSScreen.screens {
+                    let window = DesktopWidgetWindow(screen: screen)
+                    window.orderFrontRegardless()
+                    self.widgetWindows.append(window)
+                }
+                
+            case .custom:
+                // For now, same as primary - can extend with UI to select specific monitor
+                let window = DesktopWidgetWindow()
+                window.orderFrontRegardless()
+                self.widgetWindows.append(window)
             }
-            
-        case .custom:
-            // For now, same as primary - can extend with UI to select specific monitor
-            let window = DesktopWidgetWindow()
-            window.orderFrontRegardless()
-            widgetWindows.append(window)
         }
     }
     
@@ -113,6 +123,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.close()
             settingsWindow = nil
         } else {
+            // Temporarily change activation policy to show window
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            
             let settingsView = SettingsView()
             let hostingController = NSHostingController(rootView: settingsView)
             
@@ -127,6 +141,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.center()
             window.makeKeyAndOrderFront(nil)
             window.level = .floating
+            
+            // Reset to accessory when window closes
+            NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
+                NSApp.setActivationPolicy(.accessory)
+            }
             
             settingsWindow = window
         }

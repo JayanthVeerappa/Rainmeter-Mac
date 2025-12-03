@@ -14,8 +14,14 @@ class WidgetSettings: ObservableObject {
     @Published var selectedMonitor: MonitorOption = .primary {
         didSet {
             UserDefaults.standard.set(selectedMonitor.rawValue, forKey: "selectedMonitor")
+            // Notify to recreate widgets (but not during initialization)
+            if isInitialized {
+                NotificationCenter.default.post(name: NSNotification.Name("MonitorSettingsChanged"), object: nil)
+            }
         }
     }
+    
+    private var isInitialized = false
     
     private init() {
         // Load saved settings
@@ -28,6 +34,8 @@ class WidgetSettings: ObservableObject {
            let monitor = MonitorOption(rawValue: savedMonitor) {
             self.selectedMonitor = monitor
         }
+        
+        isInitialized = true
     }
     
     enum WidgetSize: String, CaseIterable {

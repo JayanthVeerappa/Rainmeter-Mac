@@ -6,18 +6,16 @@ class DesktopWidgetWindow: NSWindow {
     private var dragOffset: NSPoint = .zero
     private var targetScreen: NSScreen?
     
-    convenience init(screen: NSScreen? = nil) {
+    convenience init(screen: NSScreen) {
         self.init()
-        self.targetScreen = screen ?? NSScreen.main
+        self.targetScreen = screen
         
         // Position on specified screen
-        if let screen = targetScreen {
-            let screenFrame = screen.frame
-            let size = WidgetSettings.shared.widgetSize.dimensions
-            let centerX = screenFrame.midX - (size.width / 2)
-            let centerY = screenFrame.midY - (size.height / 2)
-            self.setFrameOrigin(NSPoint(x: centerX, y: centerY))
-        }
+        let screenFrame = screen.frame
+        let size = WidgetSettings.shared.widgetSize.dimensions
+        let centerX = screenFrame.midX - (size.width / 2)
+        let centerY = screenFrame.midY - (size.height / 2)
+        self.setFrameOrigin(NSPoint(x: centerX, y: centerY))
     }
     
     init() {

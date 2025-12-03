@@ -6,7 +6,15 @@ struct RainmeterCloneApp: App {
     
     var body: some Scene {
         Settings {
-            EmptyView()
+            SettingsView()
+        }
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("Settings...") {
+                    NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
         }
     }
 }

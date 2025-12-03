@@ -36,10 +36,10 @@ class DesktopWidgetWindow: NSWindow {
         // This is the ONLY way to keep window behind apps on modern macOS
         self.level = NSWindow.Level(rawValue: -1)
         
-        // Transparent window configuration with blur effect
+        // Transparent window configuration
         self.backgroundColor = .clear
         self.isOpaque = false
-        self.hasShadow = true // Enable subtle shadow for depth
+        self.hasShadow = false
         
         // Allow interaction for dragging
         self.ignoresMouseEvents = false
@@ -52,23 +52,9 @@ class DesktopWidgetWindow: NSWindow {
         let savedPosition = WindowPositionManager.loadPosition()
         self.setFrameOrigin(savedPosition)
         
-        // Create blur effect view
-        let visualEffectView = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
-        visualEffectView.material = .hudWindow // Dark blur material
-        visualEffectView.state = .active
-        visualEffectView.blendingMode = .behindWindow
-        visualEffectView.wantsLayer = true
-        visualEffectView.layer?.cornerRadius = 20
-        visualEffectView.layer?.masksToBounds = true
-        
-        // Embed SwiftUI content via NSHostingView on top of blur
+        // Embed SwiftUI content via NSHostingView
         let contentView = WidgetContentView(window: self)
-        let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        
-        // Add blur as background, SwiftUI content on top
-        visualEffectView.addSubview(hostingView)
-        self.contentView = visualEffectView
+        self.contentView = NSHostingView(rootView: contentView)
         
         // Observe size changes
         NotificationCenter.default.addObserver(
@@ -119,12 +105,9 @@ class DesktopWidgetWindow: NSWindow {
             context.allowsImplicitAnimation = true
             self.setContentSize(newSize)
             
-            // Update visual effect view and hosting view sizes
-            if let visualEffectView = self.contentView as? NSVisualEffectView {
-                visualEffectView.setFrameSize(newSize)
-                if let hostingView = visualEffectView.subviews.first as? NSHostingView<WidgetContentView> {
-                    hostingView.setFrameSize(newSize)
-                }
+            // Update hosting view size
+            if let hostingView = self.contentView as? NSHostingView<WidgetContentView> {
+                hostingView.setFrameSize(newSize)
             }
         })
     }
